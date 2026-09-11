@@ -27,6 +27,16 @@ jobs:
     - name: Build with Maven
       run: mvn -B package --file ./quarkus-demo-app/pom.xml
 
+    # Required by the job "push-to-registry"
+    - name: Upload compiled target artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: quarkus-target
+        # The dockerfile will only require the directory "quarkus-app" in the TARGET
+        # to build the container
+        path: quarkus-demo-app/target/quarkus-app/
+        retention-days: 1
+
     - name: List files in the output target directory
       run: |
         ls ${{ github.workspace }}/quarkus-demo-app/target
@@ -38,6 +48,17 @@ jobs:
     needs: build-application  # Ensures this job runs ONLY after build-application succeeds
 
     steps:
+    # We need again the source in order to get the Dockerfile
+    - name: Checkout repository source
+      uses: actions/checkout@v4
+
+    # Get the generated TARGET directory from the previous JOB
+    - name: Download target artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: quarkus-target
+        path: quarkus-demo-app/target
+
     - name: Log in to Quay.io
       uses: docker/login-action@v3
       with:
