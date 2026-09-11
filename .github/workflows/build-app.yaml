@@ -75,6 +75,8 @@ jobs:
       uses: docker/setup-buildx-action@v4
 
     - name: Build and push Docker image
+      # This ID is referenced by the "Attach SBOM to Quay Image" step.
+      id: build-image
       uses: docker/build-push-action@v7
       with:
         context: ./quarkus-demo-app
@@ -92,6 +94,31 @@ jobs:
         # Setting mode=max instructs BuildKit to cache intermediate build stages (crucial for multi-stage Quarkus Dockerfiles),
         # rather than only the final output image layers.
         #cache-to: type=gha,mode=max
+
+
+# Create a Software Bill of Materials (SBOM) manifest file to provide Red Hat Trusted Profile Analyzer (RHTPA)
+# with the package data needed for security analysis.
+    - name: Generate SBOM (SPDX JSON)
+      uses: anchore/sbom-action@v0
+      with:
+        image: quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
+# Red Hat Trusted Profile Analyzer supports SPDX and CycloneDX JSON formats
+# CycloneDX is managed by OWASP while SPDX is managed by the Linux Foundation and is an ISO/IEC standard
+# TPA only supports CycloneDX version 1.3, 1.4, 1.5, and 1.6, along with SPDX version 2.2, and 2.3.
+        format: spdx-json@2.3
+        output-file: sbom.spdx.json
+
+    # Install Cosign CLI to attach the SBOM
+    - name: Install Cosign
+      uses: sigstore/cosign-installer@v3.5.0
+
+    - name: Attach SBOM to Quay Image
+      run: |
+        cosign attach sbom \
+          --type spdx \
+          --sbom sbom.spdx.json \
+          quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
+
 
 # How to build just by using "docker":
 #
