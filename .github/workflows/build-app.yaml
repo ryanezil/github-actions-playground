@@ -15,10 +15,10 @@ jobs:
 
     steps:
     - name: Checkout source code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Set up JDK 21
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v6
       with:
         java-version: '21'
         distribution: 'temurin'
@@ -29,7 +29,7 @@ jobs:
 
     # Required by the job "push-to-registry"
     - name: Upload compiled target artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: quarkus-target
         # The dockerfile will only require the directory "quarkus-app" in the TARGET
@@ -50,22 +50,18 @@ jobs:
     steps:
     # We need again the source in order to get the Dockerfile
     - name: Checkout repository source
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     # Get the generated TARGET directory from the previous JOB
     - name: Download target artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: quarkus-target
         # Dockerfile looks for the path "target/quarkus-app/"
         path: quarkus-demo-app/target/quarkus-app/
 
-    - name: List files in the retrieved target directory
-      run: |
-        ls -laR ${{ github.workspace }}/quarkus-demo-app/target
-
     - name: Log in to Quay.io
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
 # Create the following on GitHub: Project Repository > Settings > Secrets and variables > Actions
 # Repository secrets name: QUAY_ROBOT_ACCOUNT and QUAY_ROBOT_TOKEN
@@ -79,7 +75,7 @@ jobs:
       uses: docker/setup-buildx-action@v4
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@v7
       with:
         context: ./quarkus-demo-app
         file: ./quarkus-demo-app/src/main/docker/Dockerfile.jvm
