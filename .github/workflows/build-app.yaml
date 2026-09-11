@@ -109,10 +109,10 @@ jobs:
 #      run: |
 #        docker build \
 #          -f ./quarkus-demo-app/src/main/docker/Dockerfile.jvm \
-#          -t quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }} \
+#          -t quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }} \
 #          ./quarkus-demo-app
 #
-#        docker push quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
+#        docker push quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
 
 
 
