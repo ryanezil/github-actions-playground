@@ -1,7 +1,4 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-name: Java CI with Maven
+name: Build Java Quarkus Application with Maven
 
 on:
   push:
@@ -12,7 +9,7 @@ on:
       - main
 
 jobs:
-  build:
+  build-application:
 
     runs-on: ubuntu-latest
 
@@ -34,6 +31,12 @@ jobs:
       run: |
         ls ${{ github.workspace }}/quarkus-demo-app/target
 
+
+  push-to-registry:
+
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Log in to Quay.io
       uses: docker/login-action@v3
       with:
@@ -77,4 +80,5 @@ jobs:
 #          ./quarkus-demo-app
 #
 #        docker push quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
+
 
