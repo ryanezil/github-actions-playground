@@ -136,11 +136,19 @@ jobs:
     - name: Install Cosign
       uses: sigstore/cosign-installer@v3.5.0
 
-    - name: Attach SBOM to Quay Image
+#    - name: Attach SBOM to Quay Image
+#      run: |
+#        cosign attach sbom \
+#          --type spdx \
+#          --sbom sbom.spdx.json \
+#          quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
+      # Generate a signed attestation holding the SBOM
+      # Cosign Attestations signs and attaches the SBOM simultaneously.
+    - name: Sign and Attest SBOM to Image
       run: |
-        cosign attach sbom \
+        cosign attest \
           --type spdx \
-          --sbom sbom.spdx.json \
+          --predicate sbom.spdx.json \
           quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
 
 
