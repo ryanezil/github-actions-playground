@@ -47,6 +47,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-application  # Ensures this job runs ONLY after build-application succeeds
 
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # <-- Required for Sigstore keyless signing (using GitHub's OIDC identity [Keyless])
+
     steps:
     # We need again the source in order to get the Dockerfile
     - name: Checkout repository source
@@ -76,6 +81,7 @@ jobs:
 
     - name: Build and push Docker image
       # This ID is referenced by the "Attach SBOM to Quay Image" step.
+      # This ID is referenced by the "ign and Attest SBOM to Image " step.
       id: build-image
       uses: docker/build-push-action@v7
       with:
@@ -96,8 +102,26 @@ jobs:
         #cache-to: type=gha,mode=max
 
 
+
+# ALTERNATIVE: how to build and pusth just by using "docker":
+#
+#    - name: Build and Push with standard Docker CLI
+#      run: |
+#        docker build \
+#          -f ./quarkus-demo-app/src/main/docker/Dockerfile.jvm \
+#          -t quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }} \
+#          ./quarkus-demo-app
+#
+#        docker push quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
+
+
+
 # Create a Software Bill of Materials (SBOM) manifest file to provide Red Hat Trusted Profile Analyzer (RHTPA)
 # with the package data needed for security analysis.
+# It is generated using the generated container image: it captures vulnerabilities in both code applicatoin
+# and the operating system hosting it (the underlying base image).
+#
+# Generate SBOM using Anchore Syft
     - name: Generate SBOM (SPDX JSON)
       uses: anchore/sbom-action@v0
       with:
@@ -112,23 +136,23 @@ jobs:
     - name: Install Cosign
       uses: sigstore/cosign-installer@v3.5.0
 
-    - name: Attach SBOM to Quay Image
-      run: |
-        cosign attach sbom \
-          --type spdx \
-          --sbom sbom.spdx.json \
-          quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
 
-
-# How to build just by using "docker":
-#
-#    - name: Build and Push with standard Docker CLI
+#    - name: Attach SBOM to Quay Image
 #      run: |
-#        docker build \
-#          -f ./quarkus-demo-app/src/main/docker/Dockerfile.jvm \
-#          -t quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }} \
-#          ./quarkus-demo-app
-#
-#        docker push quay.io/${{ secrets.QUAY_USERNAME }}/quarkus-demo-app:${{ github.sha }}
+#        cosign attach sbom \
+#          --type spdx \
+#          --sbom sbom.spdx.json \
+#          quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
+
+
+      # Generate a signed attestation holding the SBOM
+      # Cosign Attestations signs and attaches the SBOM simultaneously.
+      - name: Sign and Attest SBOM to Image
+        run: |
+          cosign attest \
+            --type spdx \
+            --predicate sbom.spdx.json \
+            quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
+
 
 
