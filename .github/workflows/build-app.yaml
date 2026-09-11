@@ -42,7 +42,7 @@ jobs:
 # Repository variable name: QUAY_USERNAME
 # Reference: https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets#creating-secrets-for-a-repository
         registry: quay.io
-        username: ${{ secrets.QUAY_USERNAME }}
+        username: ${{ vars.QUAY_USERNAME }}
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
 
     - name: Set up Docker Buildx
