@@ -35,6 +35,7 @@ jobs:
   push-to-registry:
 
     runs-on: ubuntu-latest
+    needs: build-application  # Ensures this job runs ONLY after build-application succeeds
 
     steps:
     - name: Log in to Quay.io
