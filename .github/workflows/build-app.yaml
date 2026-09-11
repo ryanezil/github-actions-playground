@@ -146,8 +146,9 @@ jobs:
       # Cosign Attestations signs and attaches the SBOM simultaneously.
     - name: Sign and Attest SBOM to Image
       run: |
+        # The --yes flag automatically answers YES: the command asks the user "Are you sure you would like to continue? [y/N]?"
         cosign attest \
-          --yes \  # The command asks the user "Are you sure you would like to continue? [y/N]?"
+          --yes \
           --type spdx \
           --predicate sbom.spdx.json \
           quay.io/${{ vars.QUAY_USERNAME }}/quarkus-demo-app@${{ steps.build-image.outputs.digest }}
